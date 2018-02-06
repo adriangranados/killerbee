@@ -1,0 +1,35 @@
+bootstrap = <<SCRIPT
+  apt-get update
+  apt-get install -y ubuntu-desktop mercurial python-gtk2 python-cairo python-usb python-crypto python-serial python-dev libgcrypt-dev
+  hg clone https://bitbucket.org/secdev/scapy-com
+  cd scapy-com
+  python setup.py install
+  cd ..
+  git clone https://github.com/riverloopsec/killerbee.git
+  cd killerbee
+  python setup.py install
+  cd ..
+  useradd -m killerbee --groups sudo && echo "killerbee:killerbee" | chpasswd && su -c "printf 'cd /home/killerbee\nsudo su killerbee' >> .bash_profile" -s /bin/sh vagrant
+SCRIPT
+
+Vagrant.configure(2) do |config|
+
+  config.vm.box = "ubuntu/xenial64"
+
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = true
+  end
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.name = "KillerBee"
+    vb.memory = "4096"
+    vb.customize ["modifyvm", :id, "--vram", "32"]
+    vb.customize ["modifyvm", :id, "--accelerate3d", "on"]
+    vb.customize ["modifyvm", :id, "--usb", "on"]
+    vb.customize ["modifyvm", :id, "--usbehci", "on"]
+    vb.gui = true
+  end
+
+  config.vm.provision "shell", inline: "#{bootstrap}", privileged: true
+
+end
